@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="css/animate.css">
+  <link rel="stylesheet" href="css/index.css">
+  <link href="https://cdn.bootcss.com/element-ui/2.4.0/theme-chalk/index.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <el-row class="container">
+		<el-col :span="24" class="header">
+			<el-col :span="10" class="logo" :class="collapsed ? 'logo-collapse-width' : 'logo-width'">
+				{{collapsed ? '': sysName}}
+			</el-col>
+			<el-col :span="10">
+				<div class="tools" @click.prevent="handlecollapse">
+					<i :class="collapsed ? 'el-icon-more-outline' : 'el-icon-more'" style="transform: scale(2);"></i>
+				</div>
+			</el-col>
+			<el-col :span="4" class="userinfo">
+				<el-dropdown>
+					<span class="el-dropdown-link userinfo-inner">
+					{{sysUserName}}<i class="el-icon-arrow-down el-icon--right"></i>
+					</span>
+					<el-dropdown-menu slot="dropdown">
+						<!--<el-dropdown-item>我的消息</el-dropdown-item>
+						<el-dropdown-item>设置</el-dropdown-item>-->
+						<!-- <el-dropdown-item><i class="fa fa-address-card fa-fw"></i>&nbsp; 个人信息</el-dropdown-item> -->
+						<el-dropdown-item @click.native="handlepwdChange"><i class="fa fa-key fa-fw"></i>&nbsp; 修改密码</el-dropdown-item>
+						<el-dropdown-item @click.native="logout"><i class="fa fa-power-off fa-fw"></i>&nbsp; 退出登录</el-dropdown-item>
+					</el-dropdown-menu>
+				</el-dropdown>
+			</el-col>
+		</el-col>
+		<el-col :span="24" class="main">
+			<aside :class="collapsed ? 'menu-collapsed' : 'menu-expanded el-scrollbar'">
+				<transition name="el-collapse-transition">
+				<!--导航菜单-->
+				<el-menu default-active="" class="el-menu-vertical" @open="handleopen" @close="handleclose" @select="handleselect"
+					 :collapse="collapsed" background-color="#eeeeee">
+					 <!-- 一层 -->
+					<template v-for="(item,index) in authMenu" v-show="!item.hidden">
+						<el-submenu :index="index+''" v-if="item.children && item.children.length > 0">
+							<template  slot="title">
+								<i :class="item.iconCls"></i>
+								<span slot="title">{{item.name}}</span>
+							</template >
+					 		<!-- 二层 -->
+							<template v-for="(child,cIndex) in item.children" :index="index+'_'+cIndex" v-show="!child.hidden">
+								<el-submenu :index="index+'_'+cIndex" v-if="child.children && child.children.length > 0">
+									<span slot="title">{{child.name}}</span>
+					 				<!-- 三层 -->
+									<el-menu-item v-for="(cchild,ccIndex) in child.children" :index="index+'_'+cIndex+'_'+ccIndex" v-show="!cchild.hidden">
+										<span slot="title">{{cchild.name}}</span>
+									</el-menu-item>
+								</el-submenu>
+								<el-menu-item :index="index+'_'+cIndex"  v-else v-show="!child.hidden">
+									<span slot="title">{{child.name}}</span>
+								</el-menu-item>
+							</template>
+						</el-submenu>
+						<el-menu-item v-else :index="index+''">
+								<i :class="item.iconCls"></i>
+								<span slot="title">{{item.name}}</span>
+						</el-menu-item>
+					</template>
+				</el-menu>
+				</transition>
+			</aside>
+			<section class="content-container">
+				<div class="grid-content bg-purple-light">
+					<el-col :span="24" class="breadcrumb-container">
+						<el-breadcrumb separator-class="el-icon-arrow-right">
+						  <template v-for="(item,index) in menuNames">
+						  	<el-breadcrumb-item>{{item}}</el-breadcrumb-item>
+						  </template>
+						</el-breadcrumb>
+					</el-col>
+					<el-col :span="24" class="content-wrapper">
+						<transition name="fade" mode="out-in">
+							<iframe class="content-iframe" src="welcome.html"></iframe>
+						</transition>
+					</el-col>
+				</div>
+			</section>
+		</el-col>
+	</el-row>
+	
+	<!--修改密码界面-->
+	<el-dialog title="修改密码" :visible.sync="pwdFormVisible" :close-on-click-modal="false">
+		<el-form :model="pwdForm" label-width="100px" :rules="pwdFormRules" ref="pwdForm">
+			<el-form-item label="原始密码" prop="oldPwd">
+				<el-input type="text" v-model="pwdForm.oldPwd"></el-input>
+			</el-form-item>
+			<el-form-item label="新密码" prop="newPwd">
+				<el-input type="text" v-model="pwdForm.newPwd"></el-input>
+			</el-form-item>
+			<el-form-item label="确认新密码" prop="newPwd2">
+				<el-input type="text" v-model="pwdForm.newPwd2"></el-input>
+			</el-form-item>
+		</el-form>
+		<div slot="footer" class="dialog-footer">
+			<el-button @click="pwdChangeClose">取消</el-button>
+			<el-button type="primary" @click="pwdChange" :loading="pwdLoading">提交</el-button>
+		</div>
+	</el-dialog>
+	
+  </div>
+</body>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+  <!-- 先引入 Vue -->
+  <script src="https://cdn.bootcss.com/vue/2.5.16/vue.js"></script>
+  <!-- 引入组件库 -->
+  <script src="https://cdn.bootcss.com/element-ui/2.4.0/index.js"></script>
+  <script type="text/javascript" src="js/index.js"></script>
+</html>

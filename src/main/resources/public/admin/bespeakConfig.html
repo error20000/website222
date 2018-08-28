@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="css/animate.css">
+  <link rel="stylesheet" href="css/index.css">
+  <link href="https://cdn.bootcss.com/element-ui/2.4.0/theme-chalk/index.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+</head>
+<body class="animated fadeInRight">
+  <div id="app">
+    <section>
+		<!--工具条-->
+		<el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
+			<el-col :span="6" >
+				<el-form :inline="true" :model="filters">
+					<el-form-item>
+						<el-button type="primary" @click="handleAdd">新增</el-button>
+					</el-form-item>
+				</el-form>
+			</el-col>
+			<el-col :span="18">
+				<el-form :inline="true" :model="filters" style="float: right;">
+					<!--<el-form-item>
+						<el-input v-model="filters.name" placeholder="名称"></el-input>
+					</el-form-item>
+					<el-form-item>
+						<el-button type="primary" @click="getList">查询</el-button>
+					</el-form-item>-->
+				</el-form>
+			</el-col>
+		</el-col>
+
+		<!--列表-->
+		<el-table :data="list" highlight-current-row border v-loading="listLoading" @selection-change="selsChange" style="width: 100%;" class="mytable" >
+			<el-table-column type="selection" width="55">
+			</el-table-column>
+			<el-table-column label="PID" prop="pid" width="100" placeholder="唯一">
+			</el-table-column>
+			<el-table-column label="名称" prop="name" min-width="100">
+			</el-table-column>
+			<el-table-column label="开始时间" prop="start" min-width="200">
+			</el-table-column>
+			<el-table-column label="结束时间" prop="end" min-width="200">
+			</el-table-column>
+			<el-table-column label="状态" prop="status" min-width="200">
+			</el-table-column>
+			<el-table-column label="偏移量" prop="offset" min-width="200">
+			</el-table-column>
+			<el-table-column fixed="right" label="操作" width="220">
+				<template scope="scope">
+					<el-button size="small" @click="handleView(scope.$index, scope.row)">查看</el-button>
+					<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+					<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>
+				</template>
+			</el-table-column>
+		</el-table>
+
+		<!--工具条-->
+		<el-col :span="24" class="toolbar">
+			<!-- <el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量删除</el-button> -->
+			<el-pagination layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange" @current-change="handleCurrentChange" :page-sizes="[10, 20, 50, 100]" :page-size="rows" :total="total" style="float:right;">
+			</el-pagination>
+		</el-col>
+		
+		<!--新增界面-->
+		<el-dialog title="新增" :visible.sync="addFormVisible" :close-on-click-modal="false">
+			<el-form :model="addForm" label-width="100px" :rules="addFormRules" ref="addForm">
+				<el-form-item label="PID" prop="pid">
+					<el-input type="number" v-model="addForm.pid"></el-input>
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<el-input type="text" v-model="addForm.name"></el-input>
+				</el-form-item>
+				<el-form-item label="开始时间" prop="start">
+					<el-date-picker v-model="addForm.start" type="datetime"placeholder="选择日期时间" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+				</el-form-item>
+				<el-form-item label="结束时间" prop="end">
+					<el-date-picker v-model="addForm.end" type="datetime"placeholder="选择日期时间" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+				</el-form-item>
+				<el-form-item label="状态" prop="status">
+					<el-radio-group v-model="addForm.status">
+				      <el-radio :label="0">关闭</el-radio>
+				      <el-radio :label="1">开启</el-radio>
+				    </el-radio-group>
+				</el-form-item>
+				<el-form-item label="偏移量" prop="offset">
+					<el-input type="number" v-model="addForm.offset"></el-input>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="addClose">取消</el-button>
+				<el-button type="primary" @click="addSubmit" :loading="addLoading">提交</el-button>
+			</div>
+		</el-dialog>
+
+		<!--编辑界面-->
+		<el-dialog title="编辑" :visible.sync="editFormVisible" :close-on-click-modal="false">
+			<el-form :model="editForm" label-width="100px" :rules="editFormRules" ref="editForm">
+				<el-form-item label="PID" prop="pid">
+					<el-input type="number" v-model="editForm.pid" :disabled="true"></el-input>
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<el-input type="text" v-model="editForm.name"></el-input>
+				</el-form-item>
+				<el-form-item label="开始时间" prop="start">
+					<el-date-picker v-model="editForm.start" type="datetime"placeholder="选择日期时间" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+				</el-form-item>
+				<el-form-item label="结束时间" prop="end">
+					<el-date-picker v-model="editForm.end" type="datetime"placeholder="选择日期时间" value-format="yyyy-MM-dd HH:mm:ss"></el-date-picker>
+				</el-form-item>
+				<el-form-item label="状态" prop="status">
+					<el-radio-group v-model="editForm.status">
+				      <el-radio :label="0">关闭</el-radio>
+				      <el-radio :label="1">开启</el-radio>
+				    </el-radio-group>
+				</el-form-item>
+				<el-form-item label="偏移量" prop="offset">
+					<el-input type="number" v-model="editForm.offset"></el-input>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="editClose">取消</el-button>
+				<el-button type="primary" @click="editSubmit" :loading="editLoading">提交</el-button>
+			</div>
+		</el-dialog>
+
+		<!--查看界面-->
+		<el-dialog title="查看" :visible.sync="viewFormVisible" :close-on-click-modal="false">
+			<el-form :model="viewForm" label-width="100px" ref="viewForm">
+				<el-form-item label="PID" prop="pid">
+					<div v-html="viewForm.pid"></div>
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<div v-html="viewForm.name"></div>
+				</el-form-item>
+				<el-form-item label="开始时间" prop="start">
+					<div v-html="viewForm.start"></div>
+				</el-form-item>
+				<el-form-item label="结束时间" prop="end">
+					<div v-html="viewForm.end"></div>
+				</el-form-item>
+				<el-form-item label="状态" prop="status">
+					<div v-html="viewForm.status == 0 ? '关闭':'开启'"></div>
+				</el-form-item>
+				<el-form-item label="偏移量" prop="offset">
+					<div v-html="viewForm.offset"></div>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="viewFormVisible = false">关闭</el-button>
+			</div>
+		</el-dialog>
+		
+	</section>
+  </div>
+</body>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+  <!-- 先引入 Vue -->
+  <script src="https://cdn.bootcss.com/vue/2.5.16/vue.js"></script>
+  <!-- 引入组件库 -->
+  <script src="https://cdn.bootcss.com/element-ui/2.4.0/index.js"></script>
+  <script type="text/javascript" src="js/bespeakConfig.js"></script>
+    
+</html>

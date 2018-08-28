@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="css/animate.css">
+  <link rel="stylesheet" href="css/index.css">
+  <link href="https://cdn.bootcss.com/element-ui/2.4.0/theme-chalk/index.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet">
+  <style>
+  .demo-table-expand {
+    font-size: 0;
+  }
+  .demo-table-expand label {
+    width: 90px;
+    color: #99a9bf;
+  }
+  .demo-table-expand .el-form-item {
+    margin-right: 0;
+    margin-bottom: 0;
+    width: 50%;
+  }
+</style>
+  
+</head>
+<body class="animated fadeInRight">
+  <div id="app">
+    <section>
+		<!--工具条-->
+		<el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
+			<el-col :span="6" >
+				<el-form :inline="true" :model="filters">
+					<el-form-item>
+						<el-button type="primary" @click="handleAdd">新增</el-button>
+					</el-form-item>
+				</el-form>
+			</el-col>
+			<el-col :span="18">
+				<el-form :inline="true" :model="filters" style="float: right;">
+					<!--<el-form-item>
+						<el-input v-model="filters.name" placeholder="名称"></el-input>
+					</el-form-item>
+					<el-form-item>
+						<el-button type="primary" @click="getList">查询</el-button>
+					</el-form-item>-->
+				</el-form>
+			</el-col>
+		</el-col>
+
+		<!--列表-->
+		<el-table :data="list" highlight-current-row border v-loading="listLoading" @selection-change="selsChange" style="width: 100%;" class="mytable" >
+			
+			<el-table-column type="expand">
+		      <template slot-scope="props">
+		        <el-form label-position="left" inline class="demo-table-expand">
+		          <el-form-item label="PID">
+		            <span>{{ props.row.pid }}</span>
+		          </el-form-item>
+		          <el-form-item label="分类">
+		            <span>{{ typeFormatter(props.row) }}</span>
+		          </el-form-item>
+		          <el-form-item label="名称">
+		            <span>{{ props.row.name }}</span>
+		          </el-form-item>
+		          <el-form-item label="画师">
+		            <span>{{ props.row.painter }}</span>
+		          </el-form-item>
+		          <el-form-item label="CV">
+		            <span>{{ props.row.cv }}</span>
+		          </el-form-item>
+		          <el-form-item label="舰种">
+		            <span>{{ props.row.ship }}</span>
+		          </el-form-item>
+		          <el-form-item label="星级">
+		            <span>{{ props.row.star }}</span>
+		          </el-form-item>
+		          <el-form-item label="图片">
+		            <span style="width: 100px; height: 100px;display: inline-block;"><img style="max-width: 100%;max-height: 100%" alt="" :src="'/'+props.row.pic"/></span>
+		          </el-form-item>
+		          <el-form-item label="描述">
+		            <span>{{ props.row.desc }}</span>
+		          </el-form-item>
+		          <el-form-item label="其他">
+		            <span>{{ props.row.info }}</span>
+		          </el-form-item>
+		          <el-form-item label="排序">
+		            <span>{{ props.row.sort }}</span>
+		          </el-form-item>
+		          <el-form-item label="概率">
+		            <span>{{ props.row.chance }}</span>
+		          </el-form-item>
+		          <el-form-item label="数量">
+		            <span>{{ props.row.count }}</span>
+		          </el-form-item>
+		        </el-form>
+		      </template>
+		    </el-table-column>
+		    
+			<el-table-column type="selection" width="55">
+			</el-table-column>
+			<el-table-column label="PID" prop="pid" width="100">
+			</el-table-column>
+			<el-table-column label="分类" prop="type" width="100" :formatter="typeFormatter">
+			</el-table-column>
+			<el-table-column label="名称" prop="name" min-width="100">
+			</el-table-column>
+			<el-table-column label="概率" prop="chance" min-width="200">
+			</el-table-column>
+			<el-table-column label="限制数量" prop="count" min-width="200">
+			</el-table-column>
+			<el-table-column fixed="right" label="操作" width="220">
+				<template scope="scope">
+					<el-button size="small" @click="handleView(scope.$index, scope.row)">查看</el-button>
+					<el-button size="small" @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+					<el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>
+				</template>
+			</el-table-column>
+		</el-table>
+
+		<!--工具条-->
+		<el-col :span="24" class="toolbar">
+			<!-- <el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量删除</el-button> -->
+			<el-pagination layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange" @current-change="handleCurrentChange" :page-sizes="[10, 20, 50, 100]" :page-size="rows" :total="total" style="float:right;">
+			</el-pagination>
+		</el-col>
+		
+		<!--新增界面-->
+		<el-dialog title="新增" :visible.sync="addFormVisible" :close-on-click-modal="false">
+			<el-form :model="addForm" label-width="100px" :rules="addFormRules" ref="addForm">
+				<el-form-item label="PID" prop="pid">
+					<el-input type="number" v-model="addForm.pid" placeholder="唯一"></el-input>
+				</el-form-item>
+				<el-form-item label="分类" prop="type">
+					<el-select v-model="addForm.type" placeholder="请选择分类">
+					    <el-option
+					      v-for="item in typeOptions"
+					      :key="item.value"
+					      :label="item.label"
+					      :value="item.value">
+					    </el-option>
+					 </el-select>
+					
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<el-input type="text" v-model="addForm.name"></el-input>
+				</el-form-item>
+				<el-form-item label="画师" prop="painter">
+					<el-input type="text" v-model="addForm.painter"></el-input>
+				</el-form-item>
+				<el-form-item label="CV" prop="cv">
+					<el-input type="text" v-model="addForm.cv"></el-input>
+				</el-form-item>
+				<el-form-item label="舰种" prop="ship">
+					<el-input type="text" v-model="addForm.ship"></el-input>
+				</el-form-item>
+				<el-form-item label="星级" prop="star">
+					<el-input type="number" v-model="addForm.star"></el-input>
+				</el-form-item>
+				<el-form-item label="图片" prop="pic">
+					<el-input type="text" v-model="addForm.pic">
+						<el-upload slot="append"
+						  :action="uploadUrl"
+						  :on-success="handleAddUpload"
+						  :show-file-list="false">
+						  <el-button icon="el-icon-upload"></el-button>
+						</el-upload>
+					</el-input>
+				</el-form-item>
+				<el-form-item label="描述" prop="desc">
+					<el-input type="textarea" v-model="addForm.desc"></el-input>
+				</el-form-item>
+				<el-form-item label="其他" prop="info">
+					<el-input type="textarea" v-model="addForm.info"></el-input>
+				</el-form-item>
+				<el-form-item label="排序" prop="sort">
+					<el-input type="number" v-model="addForm.sort"></el-input>
+				</el-form-item>
+				<el-form-item label="概率" prop="chance">
+					<el-input type="number" v-model="addForm.chance" placeholder="请输入0-1之间的小数"></el-input>
+					<!-- <el-input-number v-model="addForm.chance" :step="0.01" :max="1" controls-position="right"></el-input-number> -->
+				</el-form-item>
+				<el-form-item label="数量" prop="count">
+					<el-input type="number" v-model="addForm.count" placeholder="限制数量：-1表示不限量"></el-input>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="addClose">取消</el-button>
+				<el-button type="primary" @click="addSubmit" :loading="addLoading">提交</el-button>
+			</div>
+		</el-dialog>
+
+		<!--编辑界面-->
+		<el-dialog title="编辑" :visible.sync="editFormVisible" :close-on-click-modal="false">
+			<el-form :model="editForm" label-width="100px" :rules="editFormRules" ref="editForm">
+				<el-form-item label="PID" prop="pid">
+					<el-input type="number" v-model="editForm.pid" :disabled="true"></el-input>
+				</el-form-item>
+				<el-form-item label="分类" prop="type">
+					<el-select v-model="editForm.type" placeholder="请选择分类">
+					    <el-option
+					      v-for="item in typeOptions"
+					      :key="item.value"
+					      :label="item.label"
+					      :value="item.value">
+					    </el-option>
+					 </el-select>
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<el-input type="text" v-model="editForm.name"></el-input>
+				</el-form-item>
+				<el-form-item label="画师" prop="painter">
+					<el-input type="text" v-model="editForm.painter"></el-input>
+				</el-form-item>
+				<el-form-item label="CV" prop="cv">
+					<el-input type="text" v-model="editForm.cv"></el-input>
+				</el-form-item>
+				<el-form-item label="舰种" prop="ship">
+					<el-input type="text" v-model="editForm.ship"></el-input>
+				</el-form-item>
+				<el-form-item label="星级" prop="star">
+					<el-input type="number" v-model="editForm.star"></el-input>
+				</el-form-item>
+				<el-form-item label="图片" prop="pic">
+					<el-input type="text" v-model="editForm.pic">
+						<el-upload slot="append"
+						  :action="uploadUrl"
+						  :on-success="handleEditUpload"
+						  :show-file-list="false">
+						  <el-button icon="el-icon-upload"></el-button>
+						</el-upload>
+					</el-input>
+				</el-form-item>
+				<el-form-item label="描述" prop="desc">
+					<el-input type="textarea" v-model="editForm.desc"></el-input>
+				</el-form-item>
+				<el-form-item label="其他" prop="info">
+					<el-input type="textarea" v-model="editForm.info"></el-input>
+				</el-form-item>
+				<el-form-item label="排序" prop="sort">
+					<el-input type="number" v-model="editForm.sort"></el-input>
+				</el-form-item>
+				<el-form-item label="概率" prop="chance">
+					<el-input type="number" v-model="editForm.chance" placeholder="请输入0-1之间的小数"></el-input>
+				</el-form-item>
+				<el-form-item label="数量" prop="count">
+					<el-input type="number" v-model="editForm.count" placeholder="限制数量：-1表示不限量"></el-input>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="editClose">取消</el-button>
+				<el-button type="primary" @click="editSubmit" :loading="editLoading">提交</el-button>
+			</div>
+		</el-dialog>
+
+		<!--查看界面-->
+		<el-dialog title="查看" :visible.sync="viewFormVisible" :close-on-click-modal="false">
+			<el-form :model="viewForm" label-width="100px" ref="viewForm">
+				<el-form-item label="PID" prop="pid">
+					<div v-html="viewForm.pid"></div>
+				</el-form-item>
+				<el-form-item label="分类" prop="type">
+					<div v-html="typeFormatter(viewForm)"></div>
+				</el-form-item>
+				<el-form-item label="名称" prop="name">
+					<div v-html="viewForm.name"></div>
+				</el-form-item>
+				<el-form-item label="画师" prop="painter">
+					<div v-html="viewForm.painter"></div>
+				</el-form-item>
+				<el-form-item label="CV" prop="cv">
+					<div v-html="viewForm.cv"></div>
+				</el-form-item>
+				<el-form-item label="舰种" prop="ship">
+					<div v-html="viewForm.ship"></div>
+				</el-form-item>
+				<el-form-item label="星级" prop="star">
+					<div v-html="viewForm.star"></div>
+				</el-form-item>
+				<el-form-item label="图片" prop="pic">
+					<div style="width: 100px; height: 100px;"><img style="max-width: 100%;max-height: 100%" alt="" :src="'/'+viewForm.pic"/></div>
+				</el-form-item>
+				<el-form-item label="描述" prop="desc">
+					<div v-html="viewForm.desc"></div>
+				</el-form-item>
+				<el-form-item label="其他" prop="info">
+					<div v-html="viewForm.info"></div>
+				</el-form-item>
+				<el-form-item label="排序" prop="sort">
+					<div v-html="viewForm.sort"></div>
+				</el-form-item>
+				<el-form-item label="概率" prop="chance">
+					<div v-html="viewForm.chance"></div>
+				</el-form-item>
+				<el-form-item label="数量 " prop="count">
+					<div v-html="viewForm.count < 0 ? '不限量': viewForm.count"></div>
+				</el-form-item>
+			</el-form>
+			<div slot="footer" class="dialog-footer">
+				<el-button @click="viewFormVisible = false">关闭</el-button>
+			</div>
+		</el-dialog>
+		
+	</section>
+  </div>
+</body>
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+  <!-- 先引入 Vue -->
+  <script src="https://cdn.bootcss.com/vue/2.5.16/vue.js"></script>
+  <!-- 引入组件库 -->
+  <script src="https://cdn.bootcss.com/element-ui/2.4.0/index.js"></script>
+  <script type="text/javascript" src="js/activeConfig.js"></script>
+    
+</html>
